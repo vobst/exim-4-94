@@ -1,12 +1,10 @@
 FROM ubuntu
-# TODO Use WORKDIR
-# TODO Use ENV
 #---INSTALL EXIM---INSTALL EXIM---INSTALL EXIM---INSTALL EXIM
 # get tools and dependencies for building
 RUN apt-get update && \
 apt-get upgrade && \
 apt-get install -y \
-openssl libssl-dev \
+libssl-dev \
 curl \
 gcc make \
 pkg-config \
@@ -23,30 +21,25 @@ WORKDIR /opt/exim-4.94/src
 # copy config files
 RUN touch /etc/aliases
 COPY exim-files.d/Makefile Local/Makefile
+COPY exim-files.d/Makefile-Linux Local/Makefile-Linux
 COPY exim-files.d/configure /usr/exim/configure
 RUN make install
 
 #---INSTALL TOOLS---INSTALL TOOLS---INSTALL TOOLS---INSTALL TOOLS---INSTALL TOOLS
 # get required packages
 RUN apt-get install -y \
-vim gdb python3-pip git zsh openssh-server
-# set login shell
-RUN usermod -s /bin/zsh root
+vim gdb python3-pip git zsh 
 # home directory
 WORKDIR /root/
 # gdb extensions 
 RUN git clone https://github.com/pwndbg/pwndbg.git && \
-cd pwndbg && ./setup.sh
+./pwndbg/setup.sh
 # setup dotfiles and configure ssh
 RUN git clone https://github.com/vobst/dotfiles.git && \
 ./dotfiles/scripts/install.sh && \
-cp ./dotfiles/config/ssh/sshd_config /etc/ssh/sshd_config && \
 echo 'source /root/pwndbg/gdbinit.py' >> .gdbinit_local
-COPY config-files.d/authorized_keys .ssh/authorized_keys
 # frida
 RUN pip install frida-tools
-# fetch scripts
-RUN git clone https://github.com/vobst/exim.git
 
 #---START EXIM---START EXIM---START EXIM---START EXIM---START EXIM---START EXIM
 CMD ["/usr/exim/bin/exim", "-bd", "-q30m"]
